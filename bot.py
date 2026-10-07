@@ -8,21 +8,23 @@ from telegram.ext import (
     ContextTypes,
 )
 
-# =========================
-# SETTINGS
-# =========================
+
+# =========================================================
+# BOT SETTINGS
+# =========================================================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+# The image is in the same folder as bot.py on GitHub
 IMAGE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "images",
-    "welcome.jpg"
+    "5922410746572639996.jpg"
 )
 
-# =========================
+
+# =========================================================
 # LOGGING
-# =========================
+# =========================================================
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -32,22 +34,29 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# =========================
-# START COMMAND
-# =========================
+# =========================================================
+# /START COMMAND
+# =========================================================
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     welcome_text = """
-<b>Welcome To 855GOAL</b>
+<b>Welcome To G168-SPORT</b>
 
-សូមស្វាគមន៍មកកាន់ 855GOAL!
+សូមស្វាគមន៍មកកាន់ G168-SPORT!
 
 ទទួលបានព័ត៌មានកីឡា ព័ត៌មានបាល់ទាត់
 លទ្ធផល និងព័ត៌មានថ្មីៗនៅទីនេះ។
 
 សូមជ្រើសរើសជម្រើសខាងក្រោម 👇
 """
+
+    # =====================================================
+    # BUTTONS
+    # =====================================================
 
     keyboard = [
         [
@@ -72,26 +81,48 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Check whether image exists
+
+    # =====================================================
+    # SEND IMAGE + MESSAGE
+    # =====================================================
+
     if os.path.exists(IMAGE_PATH):
 
-        with open(IMAGE_PATH, "rb") as photo:
+        try:
 
-            await update.message.reply_photo(
-                photo=photo,
-                caption=welcome_text,
+            with open(IMAGE_PATH, "rb") as photo:
+
+                await update.message.reply_photo(
+                    photo=photo,
+                    caption=welcome_text,
+                    parse_mode="HTML",
+                    reply_markup=reply_markup
+                )
+
+            logger.info("Welcome message and image sent successfully.")
+
+        except Exception as error:
+
+            logger.error(
+                "Could not send image: %s",
+                error
+            )
+
+            # Send text if image sending fails
+            await update.message.reply_text(
+                welcome_text,
                 parse_mode="HTML",
                 reply_markup=reply_markup
             )
 
     else:
 
-        # If image is missing, still respond
         logger.error(
-            "Image not found: %s",
+            "IMAGE NOT FOUND: %s",
             IMAGE_PATH
         )
 
+        # The bot will still respond even if the image is missing
         await update.message.reply_text(
             welcome_text,
             parse_mode="HTML",
@@ -99,9 +130,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-# =========================
+# =========================================================
 # ERROR HANDLER
-# =========================
+# =========================================================
 
 async def error_handler(
     update: object,
@@ -114,33 +145,50 @@ async def error_handler(
     )
 
 
-# =========================
-# MAIN
-# =========================
+# =========================================================
+# MAIN BOT
+# =========================================================
 
 def main():
 
+    # Check BOT_TOKEN
     if not BOT_TOKEN:
+
         raise ValueError(
-            "BOT_TOKEN environment variable is missing."
+            "BOT_TOKEN environment variable is missing. "
+            "Add BOT_TOKEN in Railway Variables."
         )
 
+
+    # Create Telegram application
     application = (
         Application.builder()
         .token(BOT_TOKEN)
         .build()
     )
 
+
+    # Register /start command
     application.add_handler(
         CommandHandler("start", start)
     )
 
-    application.add_error_handler(error_handler)
 
+    # Register error handler
+    application.add_error_handler(
+        error_handler
+    )
+
+
+    # Start bot
     print("Bot is running...")
 
     application.run_polling()
 
+
+# =========================================================
+# RUN
+# =========================================================
 
 if __name__ == "__main__":
     main()
