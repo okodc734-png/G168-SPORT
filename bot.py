@@ -39,7 +39,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [
             InlineKeyboardButton(
-                "📢 CHANNEL UPDATE",
+                "💬 DM NOW",
                 url="https://t.me/Game855GOAL"
             )
         ],
@@ -51,7 +51,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "💬 DM NOW",
+                "📢 CHANNEL UPDATE",
                 url="https://t.me/GOALWIN855"
             )
         ]
