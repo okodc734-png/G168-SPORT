@@ -5,26 +5,16 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
+    CallbackQueryHandler,
     ContextTypes,
 )
 
-
-# =========================================================
-# BOT SETTINGS
-# =========================================================
-
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# The image is in the same folder as bot.py on GitHub
 IMAGE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "5922410746572639996.jpg"
 )
-
-
-# =========================================================
-# LOGGING
-# =========================================================
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -34,14 +24,40 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# =========================================================
-# /START COMMAND
-# =========================================================
+# =========================
+# MAIN MENU
+# =========================
 
-async def start(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+def main_menu():
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "📢 Sports Updates",
+                callback_data="sports"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🌐 Website",
+                callback_data="website"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "ℹ️ About Us",
+                callback_data="about"
+            )
+        ]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+# =========================
+# START COMMAND
+# =========================
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     welcome_text = """
 <b>Welcome To G168-SPORT</b>
@@ -54,85 +70,159 @@ async def start(
 សូមជ្រើសរើសជម្រើសខាងក្រោម 👇
 """
 
-    # =====================================================
-    # BUTTONS
-    # =====================================================
-
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "📢 Sports Updates",
-                url="https://t.me/YOUR_CHANNEL"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "🌐 Website",
-                url="https://example.com"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "ℹ️ About Us",
-                url="https://example.com/about"
-            )
-        ]
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-
-    # =====================================================
-    # SEND IMAGE + MESSAGE
-    # =====================================================
-
     if os.path.exists(IMAGE_PATH):
 
         try:
-
             with open(IMAGE_PATH, "rb") as photo:
 
                 await update.message.reply_photo(
                     photo=photo,
                     caption=welcome_text,
                     parse_mode="HTML",
-                    reply_markup=reply_markup
+                    reply_markup=main_menu()
                 )
-
-            logger.info("Welcome message and image sent successfully.")
 
         except Exception as error:
 
-            logger.error(
-                "Could not send image: %s",
-                error
-            )
+            logger.error("Could not send image: %s", error)
 
-            # Send text if image sending fails
             await update.message.reply_text(
                 welcome_text,
                 parse_mode="HTML",
-                reply_markup=reply_markup
+                reply_markup=main_menu()
             )
 
     else:
 
-        logger.error(
-            "IMAGE NOT FOUND: %s",
-            IMAGE_PATH
-        )
+        logger.error("IMAGE NOT FOUND: %s", IMAGE_PATH)
 
-        # The bot will still respond even if the image is missing
         await update.message.reply_text(
             welcome_text,
             parse_mode="HTML",
-            reply_markup=reply_markup
+            reply_markup=main_menu()
         )
 
 
-# =========================================================
+# =========================
+# BUTTON RESPONSES
+# =========================
+
+async def button_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    query = update.callback_query
+
+    await query.answer()
+
+    # SPORTS UPDATES
+    if query.data == "sports":
+
+        text = """
+<b>📢 Sports Updates</b>
+
+Welcome to G168-SPORT.
+
+Here you can receive the latest sports information,
+football news, match updates and other sports content.
+
+Please check back for new updates.
+"""
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "🔙 Back to Menu",
+                    callback_data="menu"
+                )
+            ]
+        ]
+
+        await query.message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+
+    # WEBSITE
+    elif query.data == "website":
+
+        text = """
+<b>🌐 Website</b>
+
+Visit our official website below:
+
+https://example.com
+
+Tap the link above to visit the website.
+"""
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "🔙 Back to Menu",
+                    callback_data="menu"
+                )
+            ]
+        ]
+
+        await query.message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+
+    # ABOUT US
+    elif query.data == "about":
+
+        text = """
+<b>ℹ️ About G168-SPORT</b>
+
+G168-SPORT provides sports information,
+football news, match updates and other
+sports-related content.
+
+Thank you for using our Telegram bot. ⚽
+"""
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "🔙 Back to Menu",
+                    callback_data="menu"
+                )
+            ]
+        ]
+
+        await query.message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+
+    # BACK TO MENU
+    elif query.data == "menu":
+
+        text = """
+<b>🏠 Main Menu</b>
+
+Please choose an option below 👇
+"""
+
+        await query.message.reply_text(
+            text,
+            parse_mode="HTML",
+            reply_markup=main_menu()
+        )
+
+
+# =========================
 # ERROR HANDLER
-# =========================================================
+# =========================
 
 async def error_handler(
     update: object,
@@ -145,13 +235,12 @@ async def error_handler(
     )
 
 
-# =========================================================
-# MAIN BOT
-# =========================================================
+# =========================
+# START BOT
+# =========================
 
 def main():
 
-    # Check BOT_TOKEN
     if not BOT_TOKEN:
 
         raise ValueError(
@@ -159,36 +248,28 @@ def main():
             "Add BOT_TOKEN in Railway Variables."
         )
 
-
-    # Create Telegram application
     application = (
         Application.builder()
         .token(BOT_TOKEN)
         .build()
     )
 
-
-    # Register /start command
     application.add_handler(
         CommandHandler("start", start)
     )
 
+    application.add_handler(
+        CallbackQueryHandler(button_handler)
+    )
 
-    # Register error handler
     application.add_error_handler(
         error_handler
     )
 
-
-    # Start bot
     print("Bot is running...")
 
     application.run_polling()
 
-
-# =========================================================
-# RUN
-# =========================================================
 
 if __name__ == "__main__":
     main()
