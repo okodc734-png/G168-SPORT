@@ -1,4 +1,6 @@
 import os
+import logging
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -7,14 +9,27 @@ from telegram.ext import (
 )
 
 # =========================
-# BOT SETTINGS
+# SETTINGS
 # =========================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# Put your welcome image in the same GitHub repository
-# inside a folder called "images"
-IMAGE_PATH = "images/welcome.jpg"
+IMAGE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "images",
+    "welcome.jpg"
+)
+
+# =========================
+# LOGGING
+# =========================
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+
+logger = logging.getLogger(__name__)
 
 
 # =========================
@@ -34,7 +49,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 សូមជ្រើសរើសជម្រើសខាងក្រោម 👇
 """
 
-    # Clickable buttons
     keyboard = [
         [
             InlineKeyboardButton(
@@ -58,18 +72,50 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Send image + caption + buttons
-    with open(IMAGE_PATH, "rb") as photo:
-        await update.message.reply_photo(
-            photo=photo,
-            caption=welcome_text,
+    # Check whether image exists
+    if os.path.exists(IMAGE_PATH):
+
+        with open(IMAGE_PATH, "rb") as photo:
+
+            await update.message.reply_photo(
+                photo=photo,
+                caption=welcome_text,
+                parse_mode="HTML",
+                reply_markup=reply_markup
+            )
+
+    else:
+
+        # If image is missing, still respond
+        logger.error(
+            "Image not found: %s",
+            IMAGE_PATH
+        )
+
+        await update.message.reply_text(
+            welcome_text,
             parse_mode="HTML",
             reply_markup=reply_markup
         )
 
 
 # =========================
-# BOT STARTUP
+# ERROR HANDLER
+# =========================
+
+async def error_handler(
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    logger.error(
+        "Exception while processing update:",
+        exc_info=context.error
+    )
+
+
+# =========================
+# MAIN
 # =========================
 
 def main():
@@ -79,11 +125,17 @@ def main():
             "BOT_TOKEN environment variable is missing."
         )
 
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .build()
+    )
 
     application.add_handler(
         CommandHandler("start", start)
     )
+
+    application.add_error_handler(error_handler)
 
     print("Bot is running...")
 
